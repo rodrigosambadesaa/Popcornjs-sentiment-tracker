@@ -1,14 +1,16 @@
-from pattern.en.wordnet import sentiment
+"""Small, deterministic sentiment-scoring adapter for English transcripts."""
+from functools import lru_cache
 
-sentiment.load()
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-def sentiment_score(s):
-    """Caculate total sentiment score of a sentence"""
-    #docs here: http://www.clips.ua.ac.be/pages/pattern-en#sentiment
-    v = 0
-    for w in s.split(" "):
-        w = w.strip(",.!?)(#:;\"\'").lower()
-        if w in sentiment:
-            v = v + sentiment[w][0] - sentiment[w][1]
-    return v
 
+@lru_cache(maxsize=1)
+def _analyzer():
+    return SentimentIntensityAnalyzer()
+
+
+def sentiment_score(text: str) -> float:
+    """Return VADER's compound polarity in the inclusive interval [-1, 1]."""
+    if not isinstance(text, str):
+        raise TypeError("text must be a string")
+    return _analyzer().polarity_scores(text)["compound"]
